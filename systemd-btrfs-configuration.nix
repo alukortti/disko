@@ -9,6 +9,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # Filesystems (compact format)
   fileSystems = {
