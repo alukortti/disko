@@ -98,11 +98,11 @@
         };
 
         # real root dataset (cloned manually from empty@start)
-        "nixos/root" = {
-          type = "zfs_fs";
-          options.mountpoint = "legacy";
-          mountpoint = "/";
-        };
+        #"nixos/root" = {
+        #  type = "zfs_fs";
+        #  options.mountpoint = "legacy";
+        #  mountpoint = "/";
+        #};
 
         "nixos/home" = {
           type = "zfs_fs";
