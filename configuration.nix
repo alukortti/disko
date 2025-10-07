@@ -49,6 +49,11 @@
     fsType = "zfs";
   };
 
+  fileSystems."/boot/efi" = {
+    device = "/dev/vda3"; # your ESP
+    fsType = "vfat";
+  };
+
   fileSystems."/var/log" = {
     device = "rpool/nixos/var/log";
     fsType = "zfs";
