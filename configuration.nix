@@ -78,13 +78,17 @@
   };
 
   # Basic bootloader (UEFI + GRUB with ZFS support)
-  boot.loader.efi.canTouchEfiVariables = true;
+  #boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  
   boot.loader.grub = {
     enable = true;
     efiSupport = true;
+    efiInstallAsRemovable = true;
     zfsSupport = true;
     devices = [ "nodev" ];
   };
+
 
   # Minimal packages
   environment.systemPackages = with pkgs; [ vim git ];
