@@ -12,7 +12,6 @@
 
   # Required for ephemeral root
   boot.initrd.supportedFilesystems = [ "zfs" ];
-  boot.initrd.systemd.enable = true;
 
   boot.initrd.systemd = {
     enable = true;
