@@ -1,5 +1,5 @@
 let
-  diskMain = builtins.head config.zfs-root.bootDevices;
+  diskMain = "virtio-zfsdisk0";
 in
 {
   disko.devices = {
