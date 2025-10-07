@@ -28,10 +28,9 @@
   networking.hostId = ""; # replace with your 8-hex hostId
 
   fileSystems."/" = lib.mkForce {
-    device = "rpool/nixos/root";
+    device = "rpool/nixos/empty";
     fsType = "zfs";
   };
-
 
   fileSystems."/nix" = {
     device = "rpool/nixos/nix";
@@ -50,11 +49,6 @@
     fsType = "zfs";
   };
 
-  fileSystems."/boot/efi" = {
-    device = "/dev/vda3"; # your ESP
-    fsType = "vfat";
-  };
-
   fileSystems."/var/log" = {
     device = "rpool/nixos/var/log";
     fsType = "zfs";
@@ -67,16 +61,7 @@
     neededForBoot = true;
   };
 
-  fileSystems."/home" = {
-    device = "rpool/nixos/home";
-    fsType = "zfs";
-  };
 
-  fileSystems."/persist" = {
-    device = "rpool/nixos/persist";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
 
   # Basic bootloader (UEFI + GRUB with ZFS support)
   #boot.loader.efi.canTouchEfiVariables = true;
