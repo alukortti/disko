@@ -16,21 +16,22 @@
 
   boot.initrd.systemd.services.initrd-rollback-root = {
     after = [ "zfs-import-rpool.service" ];
-    wantedBy = [ "initrd.target" ];
     before = [ "sysroot.mount" ];
+    wantedBy = [ "initrd.target" ];
     path = [ pkgs.zfs ];
     description = "Rollback root fs";
-    unitConfig.DefaultDependencies = "no";
     serviceConfig.Type = "oneshot";
-    script = "zfs rollback -r rpool/nixos/empty@start";
+    script = "zfs rollback -r rpool/nixos/empty@start && zfs destroy -r rpool/nixos/root || true && zfs clone rpool/nixos/empty@start rpool/nixos/root";
   };
+
 
   networking.hostId = ""; # replace with your 8-hex hostId
 
   fileSystems."/" = lib.mkForce {
-    device = "rpool/nixos/empty";
+    device = "rpool/nixos/root";
     fsType = "zfs";
   };
+
 
   fileSystems."/nix" = {
     device = "rpool/nixos/nix";
