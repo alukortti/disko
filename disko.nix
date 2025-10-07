@@ -16,7 +16,7 @@
             content = {
               type = "filesystem";
               format = "vfat";
-              mountpoint = "/boot/efis/vda-part2";
+              mountpoint = "/boot/efi";
             };
           };
           bpool = {
