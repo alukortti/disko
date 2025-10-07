@@ -10,6 +10,11 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  networking.networkmanager.enable = true;
+  networking.useDHCP = false;
+  systemd.services.systemd-udev-settle.enable = false;
+  systemd.services.NetworkManager-wait-online.enable = false;
+
 
   # Filesystems (compact format)
   fileSystems = {
