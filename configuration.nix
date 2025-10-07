@@ -5,12 +5,10 @@
     ./hardware-configuration.nix
   ];
 
-  # Basic system setup
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.devNodes = "/dev/disk/by-id";
   boot.zfs.requestEncryptionCredentials = false;
 
-  # Required for ephemeral root
   boot.initrd.supportedFilesystems = [ "zfs" ];
 
   boot.initrd.systemd = {
@@ -18,9 +16,7 @@
     services.initrd-rollback-root = {
       after = [ "zfs-import-rpool.service" ];
       wantedBy = [ "initrd.target" ];
-      before = [
-        "sysroot.mount"
-      ];
+      before = [ "sysroot.mount" ];
       path = [ pkgs.zfs ];
       description = "Rollback root fs";
       unitConfig.DefaultDependencies = "no";
@@ -29,10 +25,9 @@
     };
   };
 
+  networking.hostId = ""; # fill with your 8-hex hostId
 
-
-  networking.hostId = ""; # replace with your 8-hex hostId
-
+  # Root and datasets
   fileSystems."/" = lib.mkForce {
     device = "rpool/nixos/empty";
     fsType = "zfs";
@@ -50,11 +45,6 @@
     neededForBoot = true;
   };
 
-  fileSystems."/boot" = {
-    device = "bpool/nixos/root";
-    fsType = "zfs";
-  };
-
   fileSystems."/var/log" = {
     device = "rpool/nixos/var/log";
     fsType = "zfs";
@@ -67,12 +57,25 @@
     neededForBoot = true;
   };
 
+  fileSystems."/persist" = {
+    device = "rpool/nixos/persist";
+    fsType = "zfs";
+    neededForBoot = true;
+  };
 
+  fileSystems."/home" = {
+    device = "rpool/nixos/home";
+    fsType = "zfs";
+  };
 
-  # Basic bootloader (UEFI + GRUB with ZFS support)
-  #boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efis/virtio-fzsdisk0-part2";;
-  
+  fileSystems."/boot/efi" = {
+    device = "/dev/disk/by-id/virtio-zfsdisk0-part1";
+    fsType = "vfat";
+  };
+
+  # Bootloader (UEFI + GRUB)
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+
   boot.loader.grub = {
     enable = true;
     efiSupport = true;
@@ -81,13 +84,7 @@
     devices = [ "nodev" ];
   };
 
-
-  # Minimal packages
   environment.systemPackages = with pkgs; [ vim git ];
-
-  # Networking
   networking.hostName = "nixos";
-
-  # Users
   users.users.root.initialPassword = "root";
 }
