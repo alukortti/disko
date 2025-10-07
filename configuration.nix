@@ -65,7 +65,7 @@
 
   # Basic bootloader (UEFI + GRUB with ZFS support)
   #boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  boot.loader.efi.efiSysMountPoint = "/boot/efis/virtio-fzsdisk0-part2";;
   
   boot.loader.grub = {
     enable = true;
