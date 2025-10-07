@@ -21,7 +21,7 @@
     path = [ pkgs.zfs ];
     description = "Rollback root fs";
     serviceConfig.Type = "oneshot";
-    script = "zfs rollback -r rpool/nixos/empty@start && zfs destroy -r rpool/nixos/root || true && zfs clone rpool/nixos/empty@start rpool/nixos/root";
+    script = "zfs rollback -r rpool/nixos/empty@start";
   };
 
 
