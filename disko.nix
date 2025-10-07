@@ -1,4 +1,3 @@
-{ }:
 let
   diskMain = builtins.head config.zfs-root.bootDevices;
 in
@@ -17,7 +16,7 @@ in
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot/efis/${diskMain}-part2";
+                mountpoint = "/boot/efi";
               };
             };
             bpool = {
