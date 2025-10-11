@@ -1,7 +1,6 @@
 let
-  diskMain = "virtio-zfsdisk0";
-in
-{
+  diskMain = "nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V";
+in {
   disko.devices = {
     disk = {
       main = {
@@ -16,7 +15,7 @@ in
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot/efi";
+                mountpoint = "/boot";
               };
             };
             root = {
@@ -24,29 +23,17 @@ in
               content = {
                 type = "btrfs";
                 subvolumes = {
-                  "/@root" = {
+                  "/root" = {
                     mountpoint = "/";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
+                    mountOptions = ["compress=zstd" "noatime"];
                   };
-                  "/@var_log" = {
-                    mountpoint = "/var/log";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
-                  };
-                  "/@var_lib" = {
-                    mountpoint = "/var/lib";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
-                  };
-                  "/@etc_nixos" = {
-                    mountpoint = "/etc/nixos";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
-                  };
-                  "/@persistent" = {
+                  "/persistent" = {
                     mountpoint = "/persistent";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
+                    mountOptions = ["compress=zstd" "noatime"];
                   };
-                  "/@nix" = {
+                  "/nix" = {
                     mountpoint = "/nix";
-                    mountOptions = [ "compress=zstd" "relatime" "ssd" "discard=async" ];
+                    mountOptions = ["compress=zstd" "noatime"];
                   };
                 };
               };

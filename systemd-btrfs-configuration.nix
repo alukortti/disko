@@ -1,6 +1,10 @@
-{ config, pkgs, lib, ... }:
-
 {
+  config,
+  inputs,
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -8,81 +12,78 @@
   # Bootloader (UEFI + systemd-boot)
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efi";
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  boot.loader.efi.efiSysMountPoint = "/boot";
+  nix.settings.experimental-features = ["nix-command" "flakes"];
   networking.networkmanager.enable = true;
   networking.useDHCP = false;
   systemd.services.systemd-udev-settle.enable = false;
   systemd.services.NetworkManager-wait-online.enable = false;
 
-
-  # Filesystems (compact format)
-  fileSystems = {
-    "/" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@root" "compress=zstd" ];
-    };
-
-    "/nix" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@nix" "compress=zstd" "noatime" ];
-      neededForBoot = true;
-    };
-
-    "/var/log" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@var_log" "compress=zstd" ];
-      neededForBoot = true;
-    };
-
-    "/var/lib" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@var_lib" "compress=zstd" ];
-      neededForBoot = true;
-    };
-
-    "/etc/nixos" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@etc_nixos" "compress=zstd" ];
-      neededForBoot = true;
-    };
-
-    "/persistent" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part2";
-      fsType = "btrfs";
-      options = [ "subvol=@persistent" "compress=zstd" ];
-      neededForBoot = true;
-    };
-
-    "/boot/efi" = {
-      device = "/dev/disk/by-id/virtio-zfsdisk0-part1";
-      fsType = "vfat";
+  services = {
+    greetd = {
+      enable = true;
+      useTextGreeter = true;
+      settings = {
+        initial_session = {
+          command = "uwsm start hyprland-uwsm.desktop";
+          user = "alukortti";
+        };
+        default_session = {
+          command = "${pkgs.tuigreet}/bin/tuigreet -w 69 -t --time-format '%B, %A %d @ %H:%M:%S' -r --remember-session --asterisks --user-menu --container-padding 1 --prompt-padding 0 --theme 'border=magenta;text=white;prompt=cyan;time=green;action=yellow;button=red;container=black;input=white'";
+          user = "greeter";
+        };
+      };
     };
   };
 
-  # Optional: impermanence-style root recreation before mount
-  boot.initrd.postDeviceCommands = lib.mkAfter ''
-    mkdir -p /btrfs_tmp
-    mount -t btrfs -o subvolid=5 /dev/disk/by-id/virtio-zfsdisk0-part2 /btrfs_tmp
+  fileSystems."/" = {
+    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V_1-part2";
+    fsType = "btrfs";
+    options = ["subvol=root"];
+  };
 
-    if [[ -e /btrfs_tmp/@root ]]; then
-      mkdir -p /btrfs_tmp/old_roots
-      timestamp=$(date --date="@$(stat -c %Y /btrfs_tmp/@root)" "+%Y-%m-%d_%H-%M-%S")
-      btrfs subvolume snapshot -r /btrfs_tmp/@root "/btrfs_tmp/old_roots/$timestamp" || true
-      btrfs subvolume delete /btrfs_tmp/@root || true
+  boot.initrd.postResumeCommands = lib.mkAfter ''
+    mkdir /btrfs_tmp
+    mount nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V_1-part2 /btrfs_tmp
+    if [[ -e /btrfs_tmp/root ]]; then
+        mkdir -p /btrfs_tmp/old_roots
+        timestamp=$(date --date="@$(stat -c %Y /btrfs_tmp/root)" "+%Y-%m-%-d_%H:%M:%S")
+        mv /btrfs_tmp/root "/btrfs_tmp/old_roots/$timestamp"
     fi
 
-    find /btrfs_tmp/old_roots -mindepth 1 -maxdepth 1 -mtime +30 -print0 \
-      | xargs -0r -I{} btrfs subvolume delete "{}" || true
+    delete_subvolume_recursively() {
+        IFS=$'\n'
+        for i in $(btrfs subvolume list -o "$1" | cut -f 9- -d ' '); do
+            delete_subvolume_recursively "/btrfs_tmp/$i"
+        done
+        btrfs subvolume delete "$1"
+    }
 
-    btrfs subvolume create /btrfs_tmp/@root
+    for i in $(find /btrfs_tmp/old_roots/ -maxdepth 1 -mtime +30); do
+        delete_subvolume_recursively "$i"
+    done
+
+    btrfs subvolume create /btrfs_tmp/root
     umount /btrfs_tmp
   '';
+
+  fileSystems."/persistent" = {
+    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V_1-part2";
+    neededForBoot = true;
+    fsType = "btrfs";
+    options = ["subvol=persistent"];
+  };
+
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V_1-part2";
+    fsType = "btrfs";
+    options = ["subvol=nix"];
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_with_Heatsink_4TB_S7HRNJ0X102024V_1-part1";
+    fsType = "vfat";
+  };
 
   # Impermanence
   environment.persistence."/persistent" = {
@@ -94,11 +95,19 @@
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
       "/etc/NetworkManager/system-connections"
-      { directory = "/var/lib/colord"; user = "colord"; group = "colord"; mode = "u=rwx,g=rx,o="; }
+      {
+        directory = "/var/lib/colord";
+        user = "colord";
+        group = "colord";
+        mode = "u=rwx,g=rx,o=";
+      }
     ];
     files = [
       "/etc/machine-id"
-      { file = "/var/keys/secret_file"; parentDirectory = { mode = "u=rwx,g=,o="; }; }
+      {
+        file = "/var/keys/secret_file";
+        parentDirectory = {mode = "u=rwx,g=,o=";};
+      }
     ];
     users.alukortti = {
       directories = [
@@ -107,25 +116,45 @@
         "Pictures"
         "Documents"
         "Videos"
-        "VirtualBox VMs"
-        { directory = ".gnupg"; mode = "0700"; }
-        { directory = ".ssh"; mode = "0700"; }
-        { directory = ".nixops"; mode = "0700"; }
-        { directory = ".local/share/keyrings"; mode = "0700"; }
+        {
+          directory = ".gnupg";
+          mode = "0700";
+        }
+        {
+          directory = ".ssh";
+          mode = "0700";
+        }
+        {
+          directory = ".nixops";
+          mode = "0700";
+        }
+        {
+          directory = ".local/share/keyrings";
+          mode = "0700";
+        }
         ".local/share/direnv"
       ];
-      files = [ ".screenrc" ];
+      files = [".screenrc"];
     };
   };
 
-  networking.hostName = "nixos";
+  networking.hostName = "alukortti";
   time.timeZone = "Europe/Helsinki";
 
   users.users.root.initialPassword = "root";
   users.users.alukortti = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = ["wheel" "networkmanager"];
     initialPassword = "alukortti";
+  };
+
+  programs.hyprland = {
+    enable = true;
+    withUWSM = true;
+    # set the flake package
+    package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    # make sure to also set the portal package, so that they are in sync
+    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   };
 
   environment.systemPackages = with pkgs; [
